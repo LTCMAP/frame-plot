@@ -1,0 +1,17 @@
+{
+  "name": "frameplot",
+  "version": "0.1.0",
+  "description": "Native InDesign charts from IDML, in the browser",
+  "main": "index.html",
+  "scripts": {
+    "test": "node test/run.js && node test/ui.js",
+    "sample": "python3 test/make_sample.py",
+    "contact": "node test/contact.js"
+  },
+  "private": true,
+  "devDependencies": {
+    "jsdom": "^30.1.3",
+    "jszip": "^3.10.1",
+    "xlsx": "^0.18.5"
+  }
+}

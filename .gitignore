@@ -1,0 +1,5 @@
+node_modules/
+test/*.png
+test/*.svg
+test/out.idml
+test/ui-out.idml

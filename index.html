@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frameplot — native charts for InDesign layouts</title>
+<meta name="description" content="Open an IDML file, pick an empty frame, paste your numbers, and get the document back with editable vector charts. Runs entirely in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">Frameplot</div>
+  <div class="fileinfo" id="fileInfo">No file open</div>
+  <div class="topactions">
+    <button type="button" id="btnOpen">Open IDML</button>
+    <button type="button" id="btnDownload" class="primary" disabled>Download IDML</button>
+  </div>
+  <input type="file" id="fileIdml" accept=".idml,.zip" hidden>
+</header>
+
+<main class="layout">
+  <aside class="panel" id="panel" aria-label="Chart settings">
+
+    <details class="sec" open id="secArea">
+      <summary>Area</summary>
+      <div class="secbody">
+        <p class="hint" id="areaHint">Open an IDML file to see the frames and free space where a chart can go.</p>
+        <div id="areaList" class="arealist"></div>
+        <div class="xywh" id="xywh" hidden>
+          <label>X <input type="number" step="any" data-k="x"></label>
+          <label>Y <input type="number" step="any" data-k="y"></label>
+          <label>Width <input type="number" step="any" data-k="w"></label>
+          <label>Height <input type="number" step="any" data-k="h"></label>
+          <label class="unit">Unit
+            <select id="unitSel"><option value="pt">pt</option><option value="in">in</option><option value="mm">mm</option></select>
+          </label>
+        </div>
+        <label class="check"><input type="checkbox" id="optFree" checked> Show suggested free space</label>
+        <label class="check"><input type="checkbox" id="optMargins" checked> Keep free-space suggestions inside page margins</label>
+      </div>
+    </details>
+
+    <details class="sec" open id="secData">
+      <summary>Data</summary>
+      <div class="secbody">
+        <p class="hint">Paste from Excel or Sheets into any cell. First row holds series names, first column holds category labels.</p>
+        <div class="gridwrap"><table id="grid" aria-label="Chart data"></table></div>
+        <div class="btnrow">
+          <button type="button" data-act="addRow">Add row</button>
+          <button type="button" data-act="addCol">Add column</button>
+          <button type="button" data-act="delRow">Remove row</button>
+          <button type="button" data-act="delCol">Remove column</button>
+          <button type="button" data-act="transpose">Swap rows and columns</button>
+          <button type="button" data-act="example">Example data</button>
+        </div>
+        <div class="btnrow">
+          <button type="button" id="btnImport">Import CSV or Excel…</button>
+          <select id="sheetSel" hidden aria-label="Worksheet"></select>
+        </div>
+        <input type="file" id="fileData" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden>
+        <p class="meta" id="dataMeta"></p>
+      </div>
+    </details>
+
+    <details class="sec" open id="secChart">
+      <summary>Chart</summary>
+      <div class="secbody">
+        <div id="typeGallery" class="gallery" role="radiogroup" aria-label="Chart type"></div>
+        <div id="options" class="opts"></div>
+      </div>
+    </details>
+
+    <details class="sec" open id="secStyle">
+      <summary>Colors and type</summary>
+      <div class="secbody">
+        <div class="row2">
+          <label>Palette
+            <select id="palette"></select>
+          </label>
+          <label>New swatches
+            <select id="colorSpace"><option value="CMYK">CMYK (print)</option><option value="RGB">RGB (screen)</option></select>
+          </label>
+        </div>
+        <div id="slots" class="slots"></div>
+        <hr>
+        <label>Label paragraph style
+          <select id="paraStyle"></select>
+        </label>
+        <label>Title paragraph style
+          <select id="titleStyle"></select>
+        </label>
+        <label>Font override
+          <select id="fontSel"></select>
+        </label>
+        <label>Text color
+          <select id="textColor"></select>
+        </label>
+        <div class="row3">
+          <label>Label size (pt) <input type="number" id="sizeLabel" min="4" max="48" step="0.5" value="8"></label>
+          <label>Title size (pt) <input type="number" id="sizeTitle" min="6" max="72" step="0.5" value="14"></label>
+          <label>Inner padding (pt) <input type="number" id="padding" min="0" max="60" step="1" value="6"></label>
+        </div>
+        <p class="hint">Picking a document paragraph style keeps the chart text matched to your layout. The size here is applied on top of it.</p>
+      </div>
+    </details>
+
+    <details class="sec" open id="secPlace">
+      <summary>Add to document</summary>
+      <div class="secbody">
+        <label class="check"><input type="checkbox" id="optRemove" checked> Delete the empty frame this chart replaces</label>
+        <label>Layer
+          <select id="layerSel"></select>
+        </label>
+        <div class="btnrow">
+          <button type="button" id="btnPlace" class="primary" disabled>Place chart in document</button>
+        </div>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+        <div class="btnrow small">
+          <button type="button" id="btnSvg">Download chart as SVG</button>
+          <button type="button" id="btnSave">Save settings</button>
+          <button type="button" id="btnLoad">Load settings</button>
+          <button type="button" id="btnRevert" disabled>Revert to original file</button>
+        </div>
+        <input type="file" id="fileSettings" accept=".json,application/json" hidden>
+      </div>
+    </details>
+  </aside>
+
+  <section class="stagewrap" aria-label="Page preview">
+    <div class="stagebar" id="stageBar" hidden>
+      <div class="tabs" id="spreadTabs" role="tablist" aria-label="Spreads"></div>
+      <div class="zoom">
+        <button type="button" id="zOut" aria-label="Zoom out">−</button>
+        <button type="button" id="zFit">Fit</button>
+        <button type="button" id="zIn" aria-label="Zoom in">+</button>
+      </div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="drop" id="drop">
+        <h1>Charts for your InDesign pages, without a plug-in</h1>
+        <p>Drop an <b>.idml</b> file here. Frameplot finds empty frames and free space, asks for your numbers, and gives you back an IDML with native, editable chart objects.</p>
+        <div class="btnrow center">
+          <button type="button" class="primary" id="btnOpen2">Choose a file</button>
+          <button type="button" id="btnSample">Try the sample file</button>
+        </div>
+        <p class="hint">In InDesign: File ▸ Export ▸ Format: <b>InDesign Markup (IDML)</b>. Your file never leaves this browser tab.</p>
+      </div>
+      <div class="emptypreview" id="emptyPreview"></div>
+    </div>
+    <div class="stagefoot" id="stageFoot" hidden></div>
+  </section>
+</main>
+
+<script src="js/vendor/jszip.min.js"></script>
+<script src="js/vendor/xlsx.mini.min.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/idml.js"></script>
+<script src="js/render.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
